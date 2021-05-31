@@ -1,82 +1,120 @@
 #pragma once
-#include <vector>
+#include "Vector.h"
 #include "Matrix.h"
-
 using namespace std;
 
-// Класс решателя СЛАУ методом LU - разложения
 class SLAE
 {
 public:
-   
-   Matrix m;                  // Матрица системы
-   vector<double> b;          // Вектор правой части
+   int maxiter;           // Максимальное количество итераций
+   double eps;            // Велечина требуемой относительной невязки
 
-   // Алгоритм прямого прохода
-   void ForwardSolver()
+   vector<double> b;      // Вектор правой части
+   vector<double> t;      // Вспомогательный вектор для МСГ
+   vector<double> tt;     // Вспомогательный вектор для МСГ
+   vector<double> rk1;    // Вектор невязки на перд. итерации МСГ
+   vector<double> zk1;    // Вектор спуска на пред. итерации МСГ
+   vector<double> AtAzk1; // Вспомогательный вектор для МСГ
+
+   SLAE(int size, int _maxiter, double _eps)
    {
-      for(int i = 0; i < m.size; i++)
-      {
-         int i0 = m.ind[i + 0], i1 = m.ind[i + 1];
+      maxiter = _maxiter;
+      eps = _eps;
 
-         double s = 0;
+      b.resize(size);
 
-         for(int j = i - (i1 - i0), k = i0; j < i; j++, k++)
-            s += b[j] * m.bot_tr[k];
-
-         b[i] = (b[i] - s) / m.di[i];
-      }
+      t.resize(size);
+      tt.resize(size);
+      rk1.resize(size);
+      zk1.resize(size);
+      AtAzk1.resize(size);
    }
 
-   // Алгоритм обратного прохода
-   void BackwardSolver()
+   SLAE()
    {
-      for(int i = m.size - 1; i >= 0; i--)
-      {
-         int i0 = m.ind[i + 0], i1 = m.ind[i + 1];
 
-         double xi = b[i];
-         for(int j = i - (i1 - i0), k = i0; j < i; j++, k++)
-            b[j] -= xi * m.top_tr[k];
-
-         b[i] = xi;
-      }
    }
 
-   // LU - разложение матрицы системы
-   void LUDecomp()
+   // Метод сопряженных градиентов, возвращает количество итераций
+   int ConjGradMethod(vector<double>& xk1, vector<double>& res, Matrix& mat)
    {
-      for(int i = 0; i < m.size; i++)
+      for(int i = 0; i < mat.size; i++)
+         res[i] = xk1[i] = 0;
+
+      mat.MatVecMult(xk1, t, mat.bot_tr, mat.top_tr);       // t = A * x0
+      mat.MatVecMult(b - t, rk1, mat.top_tr, mat.bot_tr);  // r0 = AT(f - A * x0)
+      zk1 = rk1;
+
+      int k = 1;
+      while(k < maxiter)
       {
-         int i0 = m.ind[i + 0], i1 = m.ind[i + 1];
+         mat.MatVecMult(zk1, t, mat.bot_tr, mat.top_tr);    // t = A * zk-1
 
-         double sd = 0;
-         for(int j = i - (i1 - i0), k = i0; j < i; j++, k++)
-         {
-            double sl = 0, su = 0;
-            int j0 = m.ind[j + 0], j1 = m.ind[j + 1];
-            int kol_i = k - i0, kol_j = j1 - j0;
-            int kol_r = kol_i - kol_j, ki = i0, kj = j0;
+         mat.MatVecMult(t, AtAzk1, mat.top_tr, mat.bot_tr); // AtAzk1 = At * A * zk-1
+         double ak = (rk1 * rk1) / (AtAzk1 * zk1);
+         xk1 = xk1 + ak * zk1;
+         double bk = rk1 * rk1;
+         rk1 = rk1 - ak * AtAzk1;
+         bk = (rk1 * rk1) / bk;
+         zk1 = rk1 + bk * zk1;
 
-            if(kol_r > 0)
-               ki += kol_r;
-            else
-               kj -= kol_r;
+         double disc = Norm(rk1) / Norm(b); // Относительная невязка
 
-            for(; ki < k; ki++, kj++)
-            {
-               sl += m.bot_tr[ki] * m.top_tr[kj];
-               su += m.bot_tr[kj] * m.top_tr[ki];
-            }
-
-            m.bot_tr[k] = m.bot_tr[k] - sl;
-            m.top_tr[k] = m.top_tr[k] - su;
-            m.top_tr[k] /= m.di[j];
-
-            sd += m.bot_tr[k] * m.top_tr[k];
-         }
-
-         m.di[i] = m.di[i] - sd;
+         if(disc < eps)
+            break;
+         else
+            k++;
       }
+
+      res = xk1;
+      return k;
    }
-}; 
+
+   // Метод сопряженных градиентов с предобусловденной неполной
+   // факторизацией матрицей, возвращает количество итераций
+   int ConjGradPredMethod(vector<double>& xk1, vector<double>& res, Matrix& mat, SLAE& fac_slae, Matrix& fac_mat)
+   {
+      for(int i = 0; i < mat.size; i++)
+         res[i] = xk1[i] = 0;
+
+      mat.MatVecMult(xk1, t, mat.bot_tr, mat.top_tr);       // t = A * x0
+      mat.MatVecMult(b - t, rk1, mat.top_tr, mat.bot_tr);  // r0 = AT(f - A * x0)
+
+      // Решаем z0 = M-1 * r0
+      fac_slae.b = rk1;
+      fac_slae.ConjGradMethod(t, zk1, fac_mat);
+
+      int k = 1;
+      while(k < maxiter)
+      {
+         // Решаем tt = M-1 * rk-1
+         fac_slae.b = rk1;
+         fac_slae.ConjGradMethod(t, tt, fac_mat);
+
+         mat.MatVecMult(zk1, t, mat.bot_tr, mat.top_tr);    // t = A * zk-1
+         mat.MatVecMult(t, AtAzk1, mat.top_tr, mat.bot_tr); // AtAzk1 = At * A * zk-1
+
+         double ak = (tt * rk1) / (AtAzk1 * zk1);
+         xk1 = xk1 + ak * zk1;
+         double bk = tt * rk1;
+         rk1 = rk1 - ak * AtAzk1;
+
+         // Решаем tt = M-1 * rk
+         fac_slae.b = rk1;
+         fac_slae.ConjGradMethod(t, tt, fac_mat);
+
+         bk = (tt * rk1) / bk;
+         zk1 = tt + bk * zk1;
+
+         double disc = Norm(rk1) / Norm(b);
+
+         if(disc < eps)
+            break;
+         else
+            k++;
+      }
+
+      res = xk1;
+      return k;
+   }
+};

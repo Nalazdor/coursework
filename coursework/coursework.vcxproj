@@ -143,12 +143,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Matrix.h" />
-    <ClInclude Include="NonLinearBVP.h" />
+    <ClInclude Include="HyperbolicalProblem.h" />
     <ClInclude Include="SLAE.h" />
     <ClInclude Include="Test.h" />
+    <ClInclude Include="Vector.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="grid.txt" />
+    <Text Include="time_grid.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
