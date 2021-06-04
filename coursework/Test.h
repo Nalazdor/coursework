@@ -7,7 +7,7 @@ class Test
 public:
    int test_n = 0;            // Номер теста
    double lambda = 1;         
-   double sigma  = 1;
+   double sigma  = 0;
    double chi    = 0;
 
    Test(const int& t_N) : test_n(t_N) {};
@@ -15,9 +15,9 @@ public:
 
    double f(const double& x, const double& t)
    {
-      //return -1 * divlambdagrad(x, t) +
-      //   sigma * dudt(x, t) + chi * d2udt2(x, t);
-      return -1 * divlambdagrad(x, t) + sigma * u(x, t);
+      return -1 * divlambdagrad(x, t) +
+         sigma * dudt(x, t) + chi * d2udt2(x, t);
+      //return -1 * divlambdagrad(x, t) + sigma * u(x, t);
    }
 
    // Точное решение
