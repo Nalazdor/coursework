@@ -147,7 +147,7 @@ public:
 
          // Заполнение матрицы массы
          M.diag[to_add_i_di]     += hx / 6.0 * 2.0;
-         M.diag[to_add_i_di + 1] += hx / 6.0 * 2;
+         M.diag[to_add_i_di + 1] += hx / 6.0 * 2.0;
          M.bot_tr[to_add_i_tr]   += hx / 6.0 * 1.0;
 
          to_add_i_di++;
@@ -226,15 +226,15 @@ public:
    }
 
    // Базисная функция 1 на шаблонном конечном элементе
-   double phi1(const double& x)
+   double phi1(const double& xi)
    {
-      return 1 - x;
+      return 1 - xi;
    }
 
    // Базисная функция 2 на шаблонном конечном элементе
-   double phi2(const double& x)
+   double phi2(const double& xi)
    {
-      return x;
+      return xi;
    }
 
    // Вывод решения на временном слое t в поток fout 
@@ -272,23 +272,23 @@ public:
          }
       }
 
-     //// Блок вывода для вывода решения в произвольной точке расчетной области
-     // double x = 0.5;
+      //// Блок вывода для вывода решения в произвольной точке расчетной области
+      //double x = 1.5;
+      //double h = grid[1] - grid[0];
+      //int elem_i = floor((x - grid[0]) / h);
+      //double xi = (x - grid[elem_i]) / h;
 
-     // vector<double> s = solution;
+      //double calc = phi1(xi) * solution[elem_i] + phi2(xi) * solution[elem_i + 1];
+      //double prec = test.u(x, t);
 
-     // double calc = phi1(x) * s[0] + phi2(x) * s[1];
+      //fout << scientific;
+      //fout << setw(14) << x;
+      //fout << setw(14) << prec;
+      //fout << setw(14) << calc;
+      //fout << setw(14) << abs(prec - calc);
+      //fout << fixed << setw(5) << "-";
 
-     // double prec = test.u(1.5, 2);
-
-     // fout << scientific;
-     // fout << setw(14) << 1.5;
-     // fout << setw(14) << prec;
-     // fout << setw(14) << calc;
-     // fout << setw(14) << abs(prec - calc);
-     // fout << fixed << setw(5) << "-";
-
-     // fout << " point" << endl;
+      //fout << " point" << endl;
 
       // Расчет и вывод норм векторов относительной и абсолютной погрешности решения
       fout << "||u-u*||/||u*|| = " << scientific << sqrt(norm) / sqrt(norm_u) << endl;

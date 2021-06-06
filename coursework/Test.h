@@ -7,17 +7,17 @@ class Test
 public:
    int test_n = 0;            // Номер теста
    double lambda = 1;         
-   double sigma  = 0;
-   double chi    = 0;
+   double sigma  = 1;
+   double chi    = 1;
 
    Test(const int& t_N) : test_n(t_N) {};
    Test() { };
 
    double f(const double& x, const double& t)
    {
-      return -1 * divlambdagrad(x, t) +
+      return -1 * lambda * divgrad(x, t) +
          sigma * dudt(x, t) + chi * d2udt2(x, t);
-      //return -1 * divlambdagrad(x, t) + sigma * u(x, t);
+      //return -1 * lambda * divgrad(x, t) + sigma * u(x, t);
    }
 
    // Точное решение
@@ -35,13 +35,11 @@ public:
          case 6: return t * t;
          case 7: return t * t * t;
          case 8: return t * t * t * t;
-         
       };
    }
 
-   double divlambdagrad(const double& x, const double& t)
+   double divgrad(const double& x, const double& t)
    {
-
       switch(test_n)
       {
          case 0: return 0;
@@ -55,7 +53,6 @@ public:
          case 7: return 0;
          case 8: return 0;
       };
-
    }
 
    // Производная точного решения по t

@@ -44,15 +44,6 @@ public:
 
    }
 
-   // Получение диагональной факторизации матрицы
-   void DiagFact(Matrix& fact)
-   {
-      fact.diag = diag;
-
-      for (int i = 0; i < size + 1; i++)
-         fact.ind[i] = 0;
-   }
-
    // Функция умножения матрицы на вектор vec, результат в res
    void MatVecMult(const vector<double>& vec, vector<double>& res,
       const vector<double>& bot_tr, const vector<double>& top_tr)
@@ -79,31 +70,5 @@ public:
    void MatVecMult(const vector<double>& vec, vector<double>& res)
    {
       MatVecMult(vec, res, bot_tr, top_tr);
-   }
-
-   // Зануление всех элементов матрицы
-   void ResetValues()
-   {
-      for(int i = 0; i < size; i++)
-         diag[i] = 0;
-
-      for(int i = 0; i < tr_size; i++)
-      {
-         bot_tr[i] = 0;
-         top_tr[i] = 0;
-      }
-   }
-
-   // Умножение матрицы на число
-   void Mult(const double& val)
-   {
-      for(int i = 0; i < size; i++)
-         diag[i] *= val;
-
-      for(int i = 0; i < tr_size; i++)
-      {
-         bot_tr[i] *= val;
-         top_tr[i] *= val;
-      }
    }
 };
